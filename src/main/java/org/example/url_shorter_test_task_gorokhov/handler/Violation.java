@@ -1,0 +1,13 @@
+package org.example.url_shorter_test_task_gorokhov.handler;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public class Violation {
+
+    private final String fieldName;
+    private final String message;
+
+}
