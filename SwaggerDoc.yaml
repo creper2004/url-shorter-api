@@ -1,0 +1,470 @@
+openapi: 3.0.1
+info:
+  version: '1.0'
+  title: CLK API
+servers:
+  - url: http://localhost:8080
+    description: CLK API
+security:
+  - bearerAuth: []
+tags:
+  - name: Short Link API
+    description: API для управления короткими ссылками (создание, продление, редирект)
+paths:
+  /clk/shorten:
+    post:
+      tags:
+        - Short Link API
+      summary: Создание короткой ссылки
+      description: Генерирует короткую ссылку на основе полного URL. Если ссылка уже существует — возвращает существующую короткую ссылку.
+      operationId: shorten
+      requestBody:
+        description: Оригинальный URL, который нужно сократить
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortenRequest'
+            examples:
+              Пример запроса:
+                summary: Простой пример
+                description: Пример запроса
+                value:
+                  fullUrl: https://example.com/page
+        required: true
+      responses:
+        '200':
+          description: Сокращённая ссылка успешно создана
+          content:
+            application/json:
+              examples:
+                Успешный ответ:
+                  summary: Короткая ссылка
+                  description: Успешный ответ
+                  value:
+                    shortUrl: http://localhost:8080/clk/abc12345
+        '400':
+          description: |-
+            Некорректный запрос
+            - Неверный формат URL
+          content:
+            application/json:
+              examples:
+                Ошибка валидации (пример 1):
+                  summary: Невалидный URL
+                  description: Ошибка валидации (пример 1)
+                  value:
+                    violations:
+                      - fieldName: fullUrl
+                        message: Invalid URL format
+                Ошибка валидации (пример 2):
+                  summary: Пустой URL
+                  description: Ошибка валидации (пример 2)
+                  value:
+                    violations:
+                      - fieldName: fullUrl
+                        message: Full URL is blank
+        '500':
+          description: Ошибка при генерации короткой ссылки
+          content:
+            application/json:
+              examples:
+                Ошибка сервера:
+                  summary: Ошибка сервера
+                  description: Ошибка сервера
+                  value:
+                    message: Server error
+  /clk/prolong:
+    post:
+      tags:
+        - Short Link API
+      summary: Продлить время работы ссылки
+      description: 'Продлить время работы ссылки: ссылка актуальна на время TTL, указанное в настройках проекта (по умолчанию - 10 минут)'
+      operationId: prolong
+      requestBody:
+        description: Сокращенный URL, время которого нужно продлить
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpandRequest'
+            examples:
+              Пример запроса:
+                summary: Простой пример
+                description: Пример запроса
+                value:
+                  shortUrl: http://localhost:8080/clk/abc12345
+        required: true
+      responses:
+        '200':
+          description: Сокращенная ссылка успещно продлена
+        '400':
+          description: |-
+            Некорректный запрос
+            - Неверный формат URL
+          content:
+            application/json:
+              examples:
+                Ошибка валидации (пример 1):
+                  summary: Невалидный URL
+                  description: Ошибка валидации (пример 1)
+                  value:
+                    violations:
+                      - fieldName: shortUrl
+                        message: Invalid URL format
+                Ошибка валидации (пример 2):
+                  summary: Пустой URL
+                  description: Ошибка валидации (пример 2)
+                  value:
+                    violations:
+                      - fieldName: shortUrl
+                        message: Short URL is blank
+                Ошибка валидации (пример 3):
+                  summary: Невалидный атрибут ссылки
+                  description: Ошибка валидации (пример 3)
+                  value:
+                    error: ParseShortCodeException
+                    message: 'Invalid host. Expected: localhost.'
+        '404':
+          description: |-
+            Некорректный запрос
+            - Несуществующая ссылка
+          content:
+            application/json:
+              examples:
+                Некорректный запрос:
+                  summary: Несуществующая ссылка
+                  description: Некорректный запрос
+                  value:
+                    error: EntityNotFoundException
+                    message: 'Short link not found: abc12345'
+        '500':
+          description: Ошибка при получении полной ссылки
+          content:
+            application/json:
+              examples:
+                Ошибка сервера:
+                  summary: Ошибка сервера
+                  description: Ошибка сервера
+                  value:
+                    message: Server error
+  /clk/expand:
+    post:
+      tags:
+        - Short Link API
+      summary: Получение полной ссылки
+      description: Получение полной ссылки по короткой, даже если срок ее действия истек.
+      operationId: expand
+      requestBody:
+        description: Сокращенный URL, по которому нужно получить полную ссылку
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpandRequest'
+            examples:
+              Пример запроса:
+                summary: Простой пример
+                description: Пример запроса
+                value:
+                  shortUrl: http://localhost:8080/clk/abc12345
+        required: true
+      responses:
+        '200':
+          description: Полная ссылка успешно получена
+          content:
+            application/json:
+              examples:
+                Успешный ответ:
+                  summary: Короткая ссылка
+                  description: Успешный ответ
+                  value:
+                    fullUrl: https://example.com/page
+        '400':
+          description: |-
+            Некорректный запрос
+            - Неверный формат URL
+          content:
+            application/json:
+              examples:
+                Ошибка валидации (пример 1):
+                  summary: Невалидный URL
+                  description: Ошибка валидации (пример 1)
+                  value:
+                    violations:
+                      - fieldName: shortUrl
+                        message: Invalid URL format
+                Ошибка валидации (пример 2):
+                  summary: Пустой URL
+                  description: Ошибка валидации (пример 2)
+                  value:
+                    violations:
+                      - fieldName: shortUrl
+                        message: Short URL is blank
+                Ошибка валидации (пример 3):
+                  summary: Невалидный атрибут ссылки
+                  description: Ошибка валидации (пример 3)
+                  value:
+                    error: ParseShortCodeException
+                    message: 'Invalid host. Expected: localhost.'
+        '404':
+          description: |-
+            Некорректный запрос
+            - Несуществующая ссылка
+          content:
+            application/json:
+              examples:
+                Некорректный запрос:
+                  summary: Несуществующая ссылка
+                  description: Некорректный запрос
+                  value:
+                    error: EntityNotFoundException
+                    message: 'Short link not found: abc12345'
+        '500':
+          description: Ошибка при получении полной ссылки
+          content:
+            application/json:
+              examples:
+                Ошибка сервера:
+                  summary: Ошибка сервера
+                  description: Ошибка сервера
+                  value:
+                    message: Server error
+  /clk/auth/register:
+    post:
+      tags:
+        - auth-controller
+      summary: Регистрация нового пользователя
+      description: Регистрация нового пользователя. Если username занят, вернём 400 Bad Request.
+      operationId: registerUser
+      requestBody:
+        description: Данные для регистрации
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              Пример запроса:
+                summary: Простой пример
+                description: Пример запроса
+                value:
+                  username: user
+                  password: MysecurityPassword
+        required: true
+      responses:
+        '201':
+          description: Пользователь зарегистрирован успешно
+          content:
+            application/json:
+              examples:
+                Успешный ответ:
+                  summary: Пользователь зарегистрирован успешно
+                  description: Успешный ответ
+                  value:
+                    message: Successfully registered!
+        '400':
+          description: |-
+            Некорректный запрос
+            Невалидные данные регистрации
+          content:
+            application/json:
+              examples:
+                Ошибка валидации (пример 1):
+                  summary: Пустое имя пользователя
+                  description: Ошибка валидации (пример 1)
+                  value:
+                    violations:
+                      - fieldName: username
+                        message: Username cannot be blank
+                Ошибка валидации (пример 2):
+                  summary: Короткий пароль
+                  description: Ошибка валидации (пример 2)
+                  value:
+                    violations:
+                      - fieldName: password
+                        message: Password should be between 6 and 100 characters
+                Ошибка валидации (пример 3):
+                  summary: Занятый логин
+                  description: Ошибка валидации (пример 3)
+                  value:
+                    error: Register error
+                    message: Username already exist
+        '500':
+          description: Ошибка при регистрации
+          content:
+            application/json:
+              examples:
+                Ошибка сервера:
+                  summary: Ошибка сервера
+                  description: Ошибка сервера
+                  value:
+                    message: Server error
+  /clk/auth/login:
+    post:
+      tags:
+        - auth-controller
+      summary: Логин пользователя для получения JWT
+      description: Логин пользователя. В случае неверных данных – 401 Unauthorized
+      operationId: authenticateUser
+      requestBody:
+        description: Данные для регистрации
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              Пример запроса:
+                summary: Простой пример
+                description: Пример запроса
+                value:
+                  username: user
+                  password: MysecurityPassword
+        required: true
+      responses:
+        '200':
+          description: Пользователь авторизован успешно
+          content:
+            application/json:
+              examples:
+                Успешный ответ:
+                  summary: Пользователь зарегистрирован успешно
+                  description: Успешный ответ
+                  value:
+                    token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYm9iYSIsImlhdCI6MTc0ODE3Nzk3MSwiZXhwIjoxNzQ4MTgxNTcxfQ.bAq1i264NVTYVqSeFWPw94wUfRvA0N7GgmLSMswgI1k
+                    type: Bearer
+        '400':
+          description: |-
+            Некорректный запрос
+            Невалидные данные регистрации
+          content:
+            application/json:
+              examples:
+                Ошибка валидации:
+                  summary: Пустое имя пользователя
+                  description: Ошибка валидации
+                  value:
+                    violations:
+                      - fieldName: username
+                        message: Username cannot be blank
+        '401':
+          description: |-
+            Некорректный запрос
+            Неверный логин или пароль
+          content:
+            application/json:
+              examples:
+                Неверный логин или пароль:
+                  summary: Неверный логин или пароль
+                  description: Неверный логин или пароль
+                  value:
+                    error: Auth error
+                    message: Invalid username or password
+        '500':
+          description: Ошибка при регистрации
+          content:
+            application/json:
+              examples:
+                Ошибка сервера:
+                  summary: Ошибка сервера
+                  description: Ошибка сервера
+                  value:
+                    message: Server error
+  /clk/{shortCode}:
+    get:
+      tags:
+        - Short Link API
+      summary: Редирект по короткой ссылке
+      description: Перенаправляет пользователя на оригинальный URL, соответствующий короткому коду. Ссылка может быть просроченной (403) или не существовать (404).
+      operationId: redirect
+      parameters:
+        - name: shortCode
+          in: path
+          description: Короткий код, соответствующий оригинальному URL
+          required: true
+          schema:
+            type: string
+          example: abc12345
+      responses:
+        '301':
+          description: Успешный редирект на оригинальный URL
+        '400':
+          description: Невалидный код (должен состоять только из символов латинского алфавита и цифр). Длина - 8.
+          content:
+            application/json:
+              examples:
+                Невалидный код:
+                  summary: Невалидный код
+                  description: Невалидный код
+                  value:
+                    error: IllegalArgumentException
+                    message: 'Short code must be exactly 8 characters long and contain only letters and digits: !2w`sd20q///'
+        '403':
+          description: Срок действия короткой ссылки истёк
+          content:
+            application/json:
+              examples:
+                Срок действия ссылки истёк:
+                  summary: Срок действия ссылки истёк
+                  description: Срок действия ссылки истёк
+                  value:
+                    error: LinkExpiredException
+                    message: This link has expired
+        '404':
+          description: Короткая ссылка не найдена
+          content:
+            application/json:
+              examples:
+                Ссылка не найдена:
+                  summary: Ссылка не найдена
+                  description: Ссылка не найдена
+                  value:
+                    error: EntityNotFoundException
+                    message: 'Short link not found: abcde123'
+components:
+  schemas:
+    ShortenRequest:
+      required:
+        - fullUrl
+      type: object
+      properties:
+        fullUrl:
+          maxLength: 2048
+          minLength: 0
+          pattern: ^(http|https)://.*$
+          type: string
+    ExpandRequest:
+      required:
+        - shortUrl
+      type: object
+      properties:
+        shortUrl:
+          maxLength: 255
+          minLength: 0
+          pattern: ^(http|https)://.*$
+          type: string
+    RegisterRequest:
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          maxLength: 50
+          minLength: 3
+          type: string
+        password:
+          maxLength: 100
+          minLength: 6
+          type: string
+    LoginRequest:
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
